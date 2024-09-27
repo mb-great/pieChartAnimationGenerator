@@ -3,92 +3,28 @@ const fs = require("fs");
 const { exec } = require("child_process");
 const path = require("path");
 
-// Poll data (unchanged)
-const optionsData = [
-  { option: "Colgate", count: 50 },
-  { option: "Sensodyne", count: 45 },
-  { option: "Pepsodent", count: 40 },
-  { option: "Close-Up", count: 35 },
-  { option: "Crest", count: 30 },
-  { option: "Oral-B", count: 28 },
-  { option: "Aquafresh", count: 26 },
-  { option: "Parodontax", count: 22 },
-  { option: "Arm & Hammer", count: 20 },
-  { option: "Biotene", count: 18 },
-  { option: "Tom's of Maine", count: 16 },
-  { option: "Dabur Red", count: 14 },
-  { option: "Vicco", count: 12 },
-  { option: "Neem Active", count: 10 },
-  { option: "Patanjali Dant Kanti", count: 8 },
-  { option: "Elmex", count: 6 },
-  { option: "Splat", count: 5 },
-  { option: "Jason", count: 4 },
-  { option: "Marvis", count: 3 },
-  { option: "Theodent", count: 2 },
-];
-
-
-
 // Extended color palette (unchanged)
 const colors = [
-  "#FF6B6B",
-  "#4ECDC4",
-  "#45B7D1",
-  "#FFA07A",
-  "#98D8C8",
-  "#F7DC6F",
-  "#BB8FCE",
-  "#82E0AA",
-  "#F1948A",
-  "#85C1E9",
-  "#F39C12",
-  "#16A085",
-  "#D35400",
-  "#8E44AD",
-  "#2ECC71",
-  "#E74C3C",
-  "#3498DB",
-  "#1ABC9C",
-  "#9B59B6",
-  "#F39C12",
-  "#27AE60",
-  "#E67E22",
-  "#2980B9",
-  "#CB4335",
-  "#7D3C98",
+  "#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8", "#F7DC6F", "#BB8FCE",
+  "#82E0AA", "#F1948A", "#85C1E9", "#F39C12", "#16A085", "#D35400", "#8E44AD",
+  "#2ECC71", "#E74C3C", "#3498DB", "#1ABC9C", "#9B59B6", "#F39C12", "#27AE60",
+  "#E67E22", "#2980B9", "#CB4335", "#7D3C98"
 ];
 
 // Constants
-// Sort poll data to get top 3
-const sortedData = [...optionsData].sort((a, b) => b.count - a.count);
-const top3 = sortedData.slice(0, 3);
 const totalFrames = 180;
 const width = 1200;
 const height = 1200;
 const centerX = width / 2;
 const centerY = height / 2;
 const radius = 400;
-const total = optionsData.reduce((sum, item) => sum + item.count, 0);
-
-// Assign colors to poll data
-optionsData.forEach((item, index) => {
-  item.color = colors[index % colors.length];
-});
 
 // Create canvas
 const canvas = createCanvas(width, height);
 const ctx = canvas.getContext("2d");
 
 // Helper functions
-function drawSlice(
-  centerX,
-  centerY,
-  radius,
-  startAngle,
-  endAngle,
-  color,
-  scale = 1
-) {
+function drawSlice(centerX, centerY, radius, startAngle, endAngle, color, scale = 1) {
   ctx.save();
   ctx.beginPath();
   ctx.moveTo(centerX, centerY);
@@ -96,14 +32,7 @@ function drawSlice(
   ctx.lineTo(centerX, centerY);
   ctx.closePath();
 
-  const gradient = ctx.createRadialGradient(
-    centerX,
-    centerY,
-    0,
-    centerX,
-    centerY,
-    radius * scale
-  );
+  const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius * scale);
   gradient.addColorStop(0, color);
   gradient.addColorStop(1, shadeColor(color, -20));
 
@@ -117,7 +46,7 @@ function drawSlice(
   ctx.restore();
 }
 
-function addSmartLabels(optionsData, centerX, centerY, radius) {
+function addSmartLabels(optionsData, centerX, centerY, radius, total,top3) {
   let startAngle = 0;
   const labelRadius = radius + 80;
   const labels = [];
@@ -176,8 +105,7 @@ function addSmartLabels(optionsData, centerX, centerY, radius) {
     const rank = top3.indexOf(label.item);
     if (rank !== -1) {
       ctx.font = `bold ${18 - rank * 2}px Arial`;
-      ctx.fillStyle =
-        rank === 0 ? "#A67C2D" : rank === 1 ? "#7D7D7D" : "#9B6D4D";
+      ctx.fillStyle = rank === 0 ? "#A67C2D" : rank === 1 ? "#7D7D7D" : "#9B6D4D";
     } else {
       ctx.font = "bold 14px Arial";
       ctx.fillStyle = "#333333";
@@ -206,8 +134,19 @@ function shadeColor(color, percent) {
 }
 
 // Generate frames for the entire animation
-async function generateFrames() {
+async function generateFrames(optionsData) {
   console.log("Generating animation frames...");
+
+  // Sort poll data to get top 3
+  const sortedPollData = [...optionsData].sort((a, b) => b.count - a.count);
+  const top3 = sortedPollData.slice(0, 3);
+
+  const total = optionsData.reduce((sum, item) => sum + item.count, 0);
+
+  // Assign colors to poll data
+  optionsData.forEach((item, index) => {
+    item.color = colors[index % colors.length];
+  });
 
   for (let frame = 0; frame <= totalFrames; frame++) {
     const progress = frame / totalFrames;
@@ -215,14 +154,7 @@ async function generateFrames() {
     ctx.clearRect(0, 0, width, height);
 
     // Background
-    const bgGradient = ctx.createRadialGradient(
-      centerX,
-      centerY,
-      0,
-      centerX,
-      centerY,
-      radius * 1.5
-    );
+    const bgGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius * 1.5);
     bgGradient.addColorStop(0, "#f0f0f0");
     bgGradient.addColorStop(1, "#d0d0d0");
 
@@ -248,21 +180,13 @@ async function generateFrames() {
         }
       }
 
-      drawSlice(
-        centerX,
-        centerY,
-        radius,
-        startAngle,
-        endAngle,
-        item.color,
-        scale
-      );
+      drawSlice(centerX, centerY, radius, startAngle, endAngle, item.color, scale);
       startAngle += sliceAngle;
     });
 
     // Add labels with fade-in effect
     ctx.globalAlpha = Math.min(1, progress * 2); // Fade in first half
-    addSmartLabels(optionsData, centerX, centerY, radius);
+    addSmartLabels(optionsData, centerX, centerY, radius,total, top3);
     ctx.globalAlpha = 1;
 
     const buffer = canvas.toBuffer("image/png");
@@ -276,17 +200,21 @@ async function generateFrames() {
 
 // Compile video using FFmpeg (unchanged)
 function compileVideo() {
-  console.log("Compiling video...");
-  exec(
-    "ffmpeg -y -framerate 60 -i ./frames/frame_%03d.png -movflags +faststart -pix_fmt yuv420p pie_chart_animation.mp4",
-    (error) => {
-      if (error) {
-        console.error(`Error generating video: ${error}`);
-      } else {
-        console.log("Video generated successfully.");
+  return new Promise((resolve, reject) => {
+    console.log("Compiling video...");
+    exec(
+      "ffmpeg -y -framerate 60 -i ./frames/frame_%03d.png -movflags +faststart -pix_fmt yuv420p pie_chart_animation.mp4",
+      (error) => {
+        if (error) {
+          console.error(`Error generating video: ${error}`);
+          reject(error);
+        } else {
+          console.log("Video generated successfully.");
+          resolve();
+        }
       }
-    }
-  );
+    );
+  });
 }
 
 // Delete previous frames (unchanged)
@@ -304,16 +232,17 @@ async function deleteFrames() {
   }
 }
 
-// Main execution function (unchanged)
-async function main() {
+// Main execution function (modified to accept optionsData)
+async function createPieChartAnimation(optionsData) {
   try {
     fs.mkdirSync("./frames", { recursive: true });
     await deleteFrames();
-    await generateFrames();
-    compileVideo();
+    await generateFrames(optionsData);
+    await compileVideo();
   } catch (error) {
     console.error("An error occurred:", error);
+    throw error;
   }
 }
 
-main();
+module.exports = { createPieChartAnimation }; 
