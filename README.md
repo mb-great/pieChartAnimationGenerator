@@ -42,5 +42,5 @@ app.post('/generate-pie-chart', generatePieChartVideo);
 
 `res`(not actual)
 
-![responseVideoExampe](pie_chart_animation.mp4)
+[![Watch the video]](https://raw.githubusercontent.com/mb-great/pieChartAnimationGenerator/main/pie_chart_animation.mp4)
 
